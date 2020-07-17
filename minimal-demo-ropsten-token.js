@@ -9,14 +9,15 @@ const buildGroth16 = require("websnark/src/groth16");
 const websnarkUtils = require("websnark/src/utils");
 const { toWei } = require("web3-utils");
 
-let web3, contract, netId, circuit, proving_key, groth16;
+let web3, contract, netId, circuit, proving_key, groth16, tokenContract;
 const MERKLE_TREE_HEIGHT = 20;
-const RPC_URL = "https://kovan.infura.io/v3/0279e3bdf3ee49d0b547c643c2ef78ef";
+const RPC_URL = "https://ropsten.infura.io/v3/0279e3bdf3ee49d0b547c643c2ef78ef";
 const PRIVATE_KEY =
-  "6f6647294f37b415e3eaf392328b1b84dcf4cbf67c5640de2bc2c862e30079b1"; // 0x94462e71A887756704f0fb1c0905264d487972fE
-const CONTRACT_ADDRESS = "0x8b3f5393bA08c24cc7ff5A66a832562aAB7bC95f";
-const AMOUNT = "0.1";
-// CURRENCY = 'ETH'
+  "6f6647294f37b415e3eaf392328b1b84dcf4cbf67c5640de2bc2c862e30079b1";
+const CONTRACT_ADDRESS = "0x1fff63214177b29bcad301a3e115a86d37433e81";
+const TOKEN_ADDRESS = "0xc2118d4d90b274016cb7a54c03ef52e6c537d957"; // ropsten dai with 1 DAI lot
+const AMOUNT = "1";
+// CURRENCY = 'DAI'
 
 /** Generate random number of specified byte length */
 const rbigint = (nbytes) => bigInt.leBuff2int(crypto.randomBytes(nbytes));
@@ -42,14 +43,11 @@ function createDeposit(nullifier, secret) {
     deposit.nullifier.leInt2Buff(31),
     deposit.secret.leInt2Buff(31),
   ]);
-
   deposit.commitment = pedersenHash(deposit.preimage);
   deposit.nullifierHash = pedersenHash(deposit.nullifier.leInt2Buff(31));
-
   console.log("preimage in createDeposit:", toHex(deposit.preimage));
   console.log("nullifierHash in createDeposit:", toHex(deposit.nullifierHash));
   console.log("commitment in createDeposit:", toHex(deposit.commitment));
-
   return deposit;
 }
 
@@ -61,9 +59,18 @@ async function deposit() {
   console.log("Sending deposit transaction...");
   const tx = await contract.methods
     .deposit(toHex(deposit.commitment))
-    .send({ value: toWei(AMOUNT), from: web3.eth.defaultAccount, gas: 2e6 });
-  console.log(`https://kovan.etherscan.io/tx/${tx.transactionHash}`);
-  return `tornado-eth-${AMOUNT}-${netId}-${toHex(deposit.preimage, 62)}`;
+    .send({ from: web3.eth.defaultAccount, gas: 2e6 });
+  console.log(`https://ropsten.etherscan.io/tx/${tx.transactionHash}`);
+  return `tornado-dai-${AMOUNT}-${netId}-${toHex(deposit.preimage, 62)}`;
+}
+
+// check token balance and authorization state
+async function authorize() {
+  console.log("Authorizing");
+  await tokenContract.methods.approve(CONTRACT_ADDRESS, toWei(AMOUNT)).send({
+    from: web3.eth.defaultAccount,
+    gas: 2e6,
+  });
 }
 
 /**
@@ -74,13 +81,12 @@ async function deposit() {
 async function withdraw(note, recipient) {
   const deposit = parseNote(note);
   const { proof, args } = await generateSnarkProof(deposit, recipient);
-  console.log(proof);
-  console.log(args);
-  //console.log("Sending withdrawal transaction...");
-  // const tx = await contract.methods
-  //   .withdraw(proof, ...args)
-  //   .send({ from: web3.eth.defaultAccount, gas: 1e6 });
-  // console.log(`https://kovan.etherscan.io/tx/${tx.transactionHash}`);
+
+  console.log("Sending withdrawal transaction...");
+  const tx = await contract.methods
+    .withdraw(proof, ...args)
+    .send({ from: web3.eth.defaultAccount, gas: 1e6 });
+  console.log(`https://ropsten.etherscan.io/tx/${tx.transactionHash}`);
 }
 
 /**
@@ -95,8 +101,8 @@ function parseNote(noteString) {
   const buf = Buffer.from(match.groups.note, "hex");
   const nullifier = bigInt.leBuff2int(buf.slice(0, 31));
   const secret = bigInt.leBuff2int(buf.slice(31, 62));
-  console.log("nullifier in parseNote:", toHex(nullifier));
-  console.log("secret in parseNote:", toHex(secret));
+  console.log("nullifier:", toHex(nullifier));
+  console.log("secret:", toHex(secret));
   return createDeposit(nullifier, secret);
 }
 
@@ -165,7 +171,6 @@ async function generateSnarkProof(deposit, recipient) {
     pathElements: path_elements,
     pathIndices: path_index,
   };
-  console.log("input:", input);
 
   console.log("Generating SNARK proof...");
   const proofData = await websnarkUtils.genWitnessAndProve(
@@ -174,9 +179,8 @@ async function generateSnarkProof(deposit, recipient) {
     circuit,
     proving_key
   );
-  console.log("proof data:", proofData);
   const { proof } = websnarkUtils.toSolidityInput(proofData);
-
+  console.log("proof:", proof);
   const args = [
     toHex(input.root),
     toHex(input.nullifierHash),
@@ -201,7 +205,7 @@ async function main() {
   groth16 = await buildGroth16();
   netId = await web3.eth.net.getId();
   contract = new web3.eth.Contract(
-    require("./build/contracts/ETHTornado.json").abi,
+    require("./build/contracts/ERC20Tornado.json").abi,
     CONTRACT_ADDRESS
   );
   const account = web3.eth.accounts.privateKeyToAccount("0x" + PRIVATE_KEY);
@@ -209,10 +213,17 @@ async function main() {
   // eslint-disable-next-line require-atomic-updates
   web3.eth.defaultAccount = account.address;
 
-  // const note = await deposit();
-  // console.log("Deposited note:", note);
+  tokenContract = new web3.eth.Contract(
+    require("./build/contracts/ERC20Mock.json").abi,
+    TOKEN_ADDRESS
+  );
+
+  await authorize();
+  const note = await deposit();
+  console.log("Deposited note:", note);
   const note =
-    "tornado-eth-0.1-42-0x3993ef6135e17825c3cc0b85b5f3510dab8ebb5d32d9d02adf5a2403d26a890257bf1796fc3cc4a0774c04f8b191260396b6b3dd19de7df770fefb99d837";
+    "tornado-dai-1-3-0x2e1724a249bad1facc60fa6148403a8e9eb69b2bc38e4fe9b4ea0a97b8df3e490e0058bb1e643568dd50373a975aa4983a1c8758e5cde5a1b887585799fb";
+
   await withdraw(note, web3.eth.defaultAccount);
   console.log("Done");
   process.exit();

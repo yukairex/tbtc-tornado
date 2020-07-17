@@ -11,10 +11,10 @@ const { toWei } = require("web3-utils");
 
 let web3, contract, netId, circuit, proving_key, groth16;
 const MERKLE_TREE_HEIGHT = 20;
-const RPC_URL = "https://kovan.infura.io/v3/0279e3bdf3ee49d0b547c643c2ef78ef";
+const RPC_URL = "https://ropsten.infura.io/v3/0279e3bdf3ee49d0b547c643c2ef78ef";
 const PRIVATE_KEY =
   "6f6647294f37b415e3eaf392328b1b84dcf4cbf67c5640de2bc2c862e30079b1"; // 0x94462e71A887756704f0fb1c0905264d487972fE
-const CONTRACT_ADDRESS = "0x8b3f5393bA08c24cc7ff5A66a832562aAB7bC95f";
+const CONTRACT_ADDRESS = "0x6ae025c4Dd14285da5a91D6650f71AF159D40F83";
 const AMOUNT = "0.1";
 // CURRENCY = 'ETH'
 
@@ -42,14 +42,11 @@ function createDeposit(nullifier, secret) {
     deposit.nullifier.leInt2Buff(31),
     deposit.secret.leInt2Buff(31),
   ]);
-
   deposit.commitment = pedersenHash(deposit.preimage);
   deposit.nullifierHash = pedersenHash(deposit.nullifier.leInt2Buff(31));
-
   console.log("preimage in createDeposit:", toHex(deposit.preimage));
   console.log("nullifierHash in createDeposit:", toHex(deposit.nullifierHash));
   console.log("commitment in createDeposit:", toHex(deposit.commitment));
-
   return deposit;
 }
 
@@ -62,7 +59,7 @@ async function deposit() {
   const tx = await contract.methods
     .deposit(toHex(deposit.commitment))
     .send({ value: toWei(AMOUNT), from: web3.eth.defaultAccount, gas: 2e6 });
-  console.log(`https://kovan.etherscan.io/tx/${tx.transactionHash}`);
+  console.log(`https://ropsten.etherscan.io/tx/${tx.transactionHash}`);
   return `tornado-eth-${AMOUNT}-${netId}-${toHex(deposit.preimage, 62)}`;
 }
 
@@ -74,13 +71,14 @@ async function deposit() {
 async function withdraw(note, recipient) {
   const deposit = parseNote(note);
   const { proof, args } = await generateSnarkProof(deposit, recipient);
+
   console.log(proof);
   console.log(args);
-  //console.log("Sending withdrawal transaction...");
+  // console.log("Sending withdrawal transaction...");
   // const tx = await contract.methods
   //   .withdraw(proof, ...args)
   //   .send({ from: web3.eth.defaultAccount, gas: 1e6 });
-  // console.log(`https://kovan.etherscan.io/tx/${tx.transactionHash}`);
+  // console.log(`https://ropsten.etherscan.io/tx/${tx.transactionHash}`);
 }
 
 /**
@@ -95,8 +93,8 @@ function parseNote(noteString) {
   const buf = Buffer.from(match.groups.note, "hex");
   const nullifier = bigInt.leBuff2int(buf.slice(0, 31));
   const secret = bigInt.leBuff2int(buf.slice(31, 62));
-  console.log("nullifier in parseNote:", toHex(nullifier));
-  console.log("secret in parseNote:", toHex(secret));
+  console.log("nullifier:", toHex(nullifier));
+  console.log("secret:", toHex(secret));
   return createDeposit(nullifier, secret);
 }
 
@@ -165,7 +163,8 @@ async function generateSnarkProof(deposit, recipient) {
     pathElements: path_elements,
     pathIndices: path_index,
   };
-  console.log("input:", input);
+
+  console.log(input);
 
   console.log("Generating SNARK proof...");
   const proofData = await websnarkUtils.genWitnessAndProve(
@@ -174,9 +173,11 @@ async function generateSnarkProof(deposit, recipient) {
     circuit,
     proving_key
   );
-  console.log("proof data:", proofData);
+  console.log("proofData:", proofData);
+  console.log("groth16:", groth16);
+  console.log("proving_key:", proving_key);
   const { proof } = websnarkUtils.toSolidityInput(proofData);
-
+  console.log("proof:", proof);
   const args = [
     toHex(input.root),
     toHex(input.nullifierHash),
@@ -211,11 +212,16 @@ async function main() {
 
   // const note = await deposit();
   // console.log("Deposited note:", note);
+
   const note =
-    "tornado-eth-0.1-42-0x3993ef6135e17825c3cc0b85b5f3510dab8ebb5d32d9d02adf5a2403d26a890257bf1796fc3cc4a0774c04f8b191260396b6b3dd19de7df770fefb99d837";
+    "tornado-eth-0.1-3-0x234bf2a92ed014772700d8e77737de51f8c090bbc8bfd102d10acce49f1634d43b0d064bbe2fd2f1c13b05926986f76bd29459dcd324100557ff7dad36f0";
+
   await withdraw(note, web3.eth.defaultAccount);
   console.log("Done");
   process.exit();
 }
 
+// parseNote(
+//   "tornado-eth-0.1-3-0x078e3f9612c9398c5e61e4a8da348040a8844019c1fab4b72c3f6e9202133fbda633cb4dc3e4385ac16c77bafa65b36e95adc1ff2dc1af2e0c5641c43f3f"
+// );
 main();
