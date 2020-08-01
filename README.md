@@ -46,8 +46,8 @@ Deposit tBTC on Ropsten
 withdraw tBTC on Ropsten
 
 ```bash
-./cli.js withdraw <note> --rpc <rpc endpoint>
-./cli.js withdraw tornado-tbtc-0.001-3-0xbdae9a193bea274079ce3c2cfb2eede0d03ddf5aee8d069833e616a97036af0e2747cdfbde6bf87fafb17375646e9d2528c4576fe539ce1757055f30cbcc --rpc https://ropsten.infura.io/v3/27a9649f826b4e31a83e07ae09a87448
+./cli.js withdraw <note> <recipient> --rpc <rpc endpoint>
+./cli.js withdraw tornado-tbtc-0.001-3-0xbdae9a193bea274079ce3c2cfb2eede0d03ddf5aee8d069833e616a97036af0e2747cdfbde6bf87fafb17375646e9d2528c4576fe539ce1757055f30cbcc 0x1a5D6583295d56B09a4dA797275B07cC65cfC8c3 --rpc https://ropsten.infura.io/v3/27a9649f826b4e31a83e07ae09a87448
 ```
 
-You can see example usage in minimo-demo-ropsten-token.js.
+You may also see example usage in minimo-demo-ropsten-token.js.

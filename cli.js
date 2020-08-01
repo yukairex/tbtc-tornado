@@ -111,8 +111,6 @@ async function deposit({ currency, amount }) {
       ? 18
       : config.deployments[`netId${netId}`][currency].decimals;
     const tokenAmount = isLocalRPC ? TOKEN_AMOUNT : toWei(amount);
-    console.log(decimals);
-    console.log(tokenAmount);
     if (isLocalRPC) {
       console.log("Minting some test tokens to deposit");
       await erc20.methods
@@ -653,6 +651,7 @@ async function init({ rpc, noteNetId, currency = "tbtc", amount = "0.001" }) {
         "Warning! PRIVATE_KEY not found. Please provide PRIVATE_KEY in .env file if you deposit"
       );
     }
+
     erc20ContractJson = require("./build/contracts/ERC20Mock.json");
     erc20tornadoJson = require("./build/contracts/ERC20Tornado.json");
   }
