@@ -608,7 +608,7 @@ async function loadWithdrawalData({ amount, currency, deposit }) {
 /**
  * Init web3, contracts, and snark
  */
-async function init({ rpc, noteNetId, currency = "dai", amount = "100" }) {
+async function init({ rpc, noteNetId, currency = "tbtc", amount = "0.001" }) {
   let contractJson,
     erc20ContractJson,
     erc20tornadoJson,
@@ -678,6 +678,7 @@ async function init({ rpc, noteNetId, currency = "dai", amount = "100" }) {
     try {
       tornadoAddress =
         config.deployments[`netId${netId}`][currency].instanceAddress[amount];
+      console.log(tornadoAddress);
       if (!tornadoAddress) {
         throw new Error();
       }

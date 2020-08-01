@@ -28,14 +28,25 @@ Use with command line version. Works for Ropsten Network:
 
 ### Example:
 
-Try tbtc mixer on Ropsten
+Check balance of your account
 
 ```bash
+./cli.js balance <your account address> [tBTC token address] --rpc <rpc endpoint>
+./cli.js balance 0x1277f5266dEad289eB6Ab3f97a866f5854FEb33d 0xa609f2c9C5B7873F353C15D4ef6e151D14db69CC --rpc https://ropsten.infura.io/v3/27a9649f826b4e31a83e07ae09a87448
+```
+
+Deposit tBTC on Ropsten
+
+```bash
+./cli.js deposit tBTC <amount> --rpc <rpc endpoint>
 ./cli.js deposit tBTC 0.001 --rpc https://ropsten.infura.io/v3/27a9649f826b4e31a83e07ae09a87448
 
 ```
 
+withdraw tBTC on Ropsten
+
 ```bash
+./cli.js withdraw <note> --rpc <rpc endpoint>
 ./cli.js withdraw tornado-tbtc-0.001-3-0xbdae9a193bea274079ce3c2cfb2eede0d03ddf5aee8d069833e616a97036af0e2747cdfbde6bf87fafb17375646e9d2528c4576fe539ce1757055f30cbcc --rpc https://ropsten.infura.io/v3/27a9649f826b4e31a83e07ae09a87448
 ```
 
