@@ -263,6 +263,7 @@ async function withdraw({
         "ENS name resolving is not supported. Please provide DNS name of the relayer. See instuctions in README.md"
       );
     }
+    console.log("checking relayer status", relayerURL);
     const relayerStatus = await axios.get(relayerURL + "/status");
     const {
       relayerAddress,
@@ -331,7 +332,8 @@ async function withdraw({
   } else {
     // using private key
     const { proof, args } = await generateProof({ deposit, recipient, refund });
-
+    console.log(`proofs: ${proof}`);
+    console.log(`args: ${args}`);
     console.log("Submitting withdraw transaction");
     await tornado.methods
       .withdraw(proof, ...args)

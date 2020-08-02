@@ -11,6 +11,10 @@ Forked from Tornado-Cash
 1. 0.1 tBTC slot mixer: `0x4484C2ABEbA0D431c59D97207523d7dDe6C3caE4`
 1. 1 tBTC slot mixer: `0x1cddf698BCD67A83e65f2C87bB2b48ba0310A3a2`
 
+## Relayer on Ropsten:
+
+`http://142.44.219.44:8000`
+
 ## Requirements
 
 1. `node v11.15.0`
