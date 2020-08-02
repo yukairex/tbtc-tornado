@@ -263,7 +263,6 @@ async function withdraw({
         "ENS name resolving is not supported. Please provide DNS name of the relayer. See instuctions in README.md"
       );
     }
-    console.log("checking relayer status", relayerURL);
     const relayerStatus = await axios.get(relayerURL + "/status");
     const {
       relayerAddress,
@@ -276,8 +275,6 @@ async function withdraw({
       netId === (await web3.eth.net.getId()) || netId === "*",
       "This relay is for different network"
     );
-    console.log("Relay address: ", relayerAddress);
-
     const decimals = isLocalRPC
       ? 18
       : config.deployments[`netId${netId}`][currency].decimals;
@@ -308,7 +305,7 @@ async function withdraw({
         proof,
         args,
       });
-      if (netId === 1 || netId === 42) {
+      if (netId === 1 || netId === 42 || netId === 3) {
         console.log(
           `Transaction submitted through the relay. View transaction on etherscan https://${getCurrentNetworkName()}etherscan.io/tx/${
             relay.data.txHash
@@ -456,6 +453,8 @@ function getCurrentNetworkName() {
       return "";
     case 42:
       return "kovan.";
+    case 3:
+      return "ropsten.";
   }
 }
 
@@ -493,6 +492,7 @@ function calculateFee({
       break;
     }
   }
+
   return desiredFee;
 }
 
